@@ -1,20 +1,17 @@
 <template>
   <div class="license-chooser">
     <h2>数合保</h2>
-   
     <div v-if="currentQuestionIndex < questions.length">
-      <!--<button @click="viewHistory">查看历史测评结果</button>-->
-      
+      <progress :value="currentQuestionIndex" :max="questions.length"></progress>
       <h3>维度: {{ questions[currentQuestionIndex].dimension }}</h3>
       <p>{{ questions[currentQuestionIndex].text }}</p>
       <button @click="nextQuestion(true)">是</button>
       <button @click="nextQuestion(false)">否</button>
-      <button @click="nextQuestion(null)">不适用</button>
-      <progress :value="currentQuestionIndex" :max="questions.length"></progress>
+      <button v-if="questions[currentQuestionIndex].allowNa" @click="nextQuestion(null)">不适用</button>
     </div>
     <div v-else>
       <h3>测评结果</h3>
-      <p>总体评分（按照各维度中的最低分计算）: {{ totalScore }}/100</p>
+      <p>总分: {{ totalScore }}/100</p>
       <div v-for="(score, dimension) in dimensionScores" :key="dimension">
         <p>{{ dimension }}: {{ score === 'NA' ? '不适用' : score.toFixed(2) }}</p>
       </div>
@@ -22,10 +19,9 @@
       <button @click="reset">重新测试</button>
       <button @click="saveEvaluation">保存</button>
       <p v-if="saveMessage">{{ saveMessage }}</p>
-      
+      <!--<button @click="viewHistory">查看历史测评结果</button>>-->
     </div>
   </div>
-
 </template>
 
 <script>
@@ -44,7 +40,6 @@ export default {
       questions: [],
       dimensionScores: {},
       maxScores: {},
-      name: 'App',
       saveMessage: ''
     };
   },
@@ -94,7 +89,6 @@ export default {
     },
     async calculateScore() {
       let totalScore = 0;
-      let minDimensionScore = 100;
       let applicableDimensions = 0;
 
       for (const dimension in this.dimensionScores) {
@@ -103,10 +97,6 @@ export default {
           const dimensionMaxScore = this.maxScores[dimension];
           const normalizedScore = (dimensionTotalScore / dimensionMaxScore) * 100;
           this.dimensionScores[dimension] = normalizedScore;
-
-          if (normalizedScore < minDimensionScore) {
-            minDimensionScore = normalizedScore;
-          }
           totalScore += normalizedScore;
           applicableDimensions++;
         } else {
@@ -114,6 +104,7 @@ export default {
         }
       }
 
+      // 计算总分为所有适用维度的平均值
       this.totalScore = applicableDimensions ? (totalScore / applicableDimensions).toFixed(2) : 'NA';
 
       await nextTick();
@@ -225,13 +216,5 @@ progress {
   width: 100%;
   height: 20px;
   margin-bottom: 20px;
-}
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
 }
 </style>
